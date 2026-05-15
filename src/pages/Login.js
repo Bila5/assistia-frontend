@@ -12,10 +12,12 @@ function Login() {
         e.preventDefault();
         try {
             const response = await api.post('/login', { email, password });
+            console.log('Response:', response.data);
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
             navigate('/dashboard');
         } catch (err) {
+            console.log('Error:', err);
             setError('Credenciais inválidas!');
         }
     };

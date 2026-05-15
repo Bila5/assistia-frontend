@@ -3,20 +3,24 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Conversations from './pages/Conversations';
+import Organization from './pages/Organization';
 import ConversationShow from './pages/ConversationShow';
 
-function App() {
+function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
+  return token ? children : <Navigate to="/login" />;
+}
 
+function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={token ? <Dashboard /> : <Navigate to="/login" />} />
-        <Route path="/conversations" element={token ? <Conversations /> : <Navigate to="/login" />} />
-        <Route path="/conversations/:id" element={token ? <ConversationShow /> : <Navigate to="/login" />} />
-        <Route path="*" element={<Navigate to={token ? "/dashboard" : "/login"} />} />
+        <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+        <Route path="/conversations" element={<PrivateRoute><Conversations /></PrivateRoute>} />
+        <Route path="/conversations/:id" element={<PrivateRoute><ConversationShow /></PrivateRoute>} />
+        <Route path="/organization" element={<PrivateRoute><Organization /></PrivateRoute>} />`n        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>
   );

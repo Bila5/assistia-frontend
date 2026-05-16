@@ -5,34 +5,24 @@ import api from "../api";
 function Dashboard() {
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const [stats, setStats] = useState({ totalConversations: 0, totalMessages: 0, totalTasks: 0, pendingTasks: 0, doneTasks: 0, highPriorityTasks: 0 });
-    const [recentConversations, setRecentConversations] = useState([]);
+    const [conversations, setConversations] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        api.get("/conversations").then(res => {
-            const conversations = Array.isArray(res.data) ? res.data : (res.data.data || []);
-            setRecentConversations(conversations.slice(0, 5));
-            setStats(prev => ({ ...prev, totalConversations: conversations.length }));
-
-            let totalMessages = 0, totalTasks = 0, pendingTasks = 0, doneTasks = 0, highPriorityTasks = 0;
-            const promises = conversations.map(c =>
-                api.get(`/conversations/${c.id}`).then(res => {
-                    const msgs = res.data.messages || [];
-                    const tsks = res.data.tasks || [];
-                    totalMessages += msgs.length;
-                    totalTasks += tsks.length;
-                    pendingTasks += tsks.filter(t => t.status === "pending").length;
-                    doneTasks += tsks.filter(t => t.status === "done").length;
-                    highPriorityTasks += tsks.filter(t => t.priority === "high" && t.status === "pending").length;
-                })
-            );
-            Promise.all(promises).then(() => {
-                setStats({ totalConversations: conversations.length, totalMessages, totalTasks, pendingTasks, doneTasks, highPriorityTasks });
-            });
-        }).catch(() => {});
+        api.get("/conversations")
+            .then(res => {
+                const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
+                setConversations(data);
+            })
+            .catch(() => {})
+            .finally(() => setLoading(false));
     }, []);
 
-    const logout = () => { localStorage.removeItem("token"); localStorage.removeItem("user"); navigate("/login"); };
+    const logout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+    };
 
     return (
         <div style={s.container}>
@@ -41,36 +31,38 @@ function Dashboard() {
                 <div style={s.navLinks}>
                     <Link to="/dashboard" style={s.navLink}>Dashboard</Link>
                     <Link to="/conversations" style={s.navLink}>Conversas</Link>
-                    <Link to="/organization" style={s.navLink}>🏢 Organizacao</Link>
+                    <Link to="/organization" style={s.navLink}>Organizacao</Link>
                     <span style={s.navUser}>{user.name}</span>
                     <button onClick={logout} style={s.logoutBtn}>Sair</button>
                 </div>
             </nav>
             <div style={s.content}>
-                <h1 style={s.title}>📊 Dashboard</h1>
-                <div style={s.statsGrid}>
-                    <div style={s.statCard}><div style={s.statNumber}>{stats.totalConversations}</div><div style={s.statLabel}>Conversas</div></div>
-                    <div style={s.statCard}><div style={s.statNumber}>{stats.totalMessages}</div><div style={s.statLabel}>Mensagens</div></div>
-                    <div style={s.statCard}><div style={s.statNumber}>{stats.totalTasks}</div><div style={s.statLabel}>Tarefas</div></div>
-                    <div style={s.statCard}><div style={{...s.statNumber,color:"#e05555"}}>{stats.pendingTasks}</div><div style={s.statLabel}>Pendentes</div></div>
-                    <div style={s.statCard}><div style={{...s.statNumber,color:"#2a8a5a"}}>{stats.doneTasks}</div><div style={s.statLabel}>Concluidas</div></div>
-                    <div style={s.statCard}><div style={{...s.statNumber,color:"#e05555"}}>{stats.highPriorityTasks}</div><div style={s.statLabel}>🔴 Alta Prioridade</div></div>
-                </div>
-                <div style={s.card}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}>
-                        <strong style={{color:"#0f1f3d",fontSize:"1.1rem"}}>🕐 Conversas Recentes</strong>
-                        <Link to="/conversations" style={s.btnGold}>Ver Todas</Link>
-                    </div>
-                    {recentConversations.length === 0
-                        ? <p style={{color:"#aaa",fontStyle:"italic"}}>Ainda nao ha conversas.</p>
-                        : recentConversations.map(c => (
-                            <div key={c.id} style={s.convItem}>
-                                <Link to={`/conversations/${c.id}`} style={s.convLink}>{c.title}</Link>
-                                <span style={s.badge}>{c.type}</span>
+                <h1 style={s.title}>Dashboard</h1>
+                {loading
+                    ? <p style={{color:"#aaa"}}>A carregar...</p>
+                    : <>
+                        <div style={s.statsGrid}>
+                            <div style={s.statCard}><div style={s.statNumber}>{conversations.length}</div><div style={s.statLabel}>Conversas</div></div>
+                            <div style={s.statCard}><div style={s.statNumber}>{conversations.filter(c=>c.type==="meeting").length}</div><div style={s.statLabel}>Reunioes</div></div>
+                            <div style={s.statCard}><div style={s.statNumber}>{conversations.filter(c=>c.type==="whatsapp").length}</div><div style={s.statLabel}>WhatsApp</div></div>
+                        </div>
+                        <div style={s.card}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}>
+                                <strong style={{color:"#0f1f3d",fontSize:"1.1rem"}}>Conversas Recentes</strong>
+                                <Link to="/conversations" style={s.btnGold}>Ver Todas</Link>
                             </div>
-                        ))
-                    }
-                </div>
+                            {conversations.length === 0
+                                ? <p style={{color:"#aaa",fontStyle:"italic"}}>Ainda nao ha conversas.</p>
+                                : conversations.slice(0,5).map(c => (
+                                    <div key={c.id} style={s.convItem}>
+                                        <Link to={"/conversations/"+c.id} style={s.convLink}>{c.title}</Link>
+                                        <span style={s.badge}>{c.type}</span>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    </>
+                }
             </div>
         </div>
     );

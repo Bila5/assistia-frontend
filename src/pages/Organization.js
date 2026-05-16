@@ -15,15 +15,26 @@ export default function Organization() {
 
   useEffect(() => {
     api.get("/organization")
-      .then(res => { setOrg(res.data.organization); setMembers(res.data.members); })
-      .catch(err => { if (err.response?.status === 404) setCreating(true); })
+      .then(res => {
+        setOrg(res.data.organization);
+        setMembers(res.data.members);
+      })
+      .catch(err => {
+        if (err.response?.status === 404) {
+          setCreating(true);
+        } else if (err.response?.status === 401) {
+          navigate("/login");
+        } else {
+          setCreating(true);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
   const handleCreate = async (e) => {
     e.preventDefault(); setError("");
     try { const res = await api.post("/organization", form); setOrg(res.data); setCreating(false); }
-    catch (err) { setError(err.response?.data?.message || "Erro ao criar organização"); }
+    catch (err) { setError(err.response?.data?.message || "Erro ao criar organizacao"); }
   };
 
   const handleInvite = async () => {
@@ -55,7 +66,7 @@ export default function Organization() {
         <span style={s.back} onClick={() => navigate("/dashboard")}>← Voltar</span>
         {creating ? (
           <>
-            <div style={s.title}>Criar Organização</div>
+            <div style={s.title}>Criar Organizacao</div>
             {error && <div style={s.error}>{error}</div>}
             <form onSubmit={handleCreate}>
               <label style={s.label}>Nome *</label>
@@ -71,8 +82,8 @@ export default function Organization() {
         ) : (
           <>
             <div style={s.title}>🏢 {org?.name}</div>
-            <div style={{ color: "#94a3b8", marginBottom: "0.5rem" }}>📧 {org?.email || "—"}</div>
-            <div style={{ color: "#94a3b8", marginBottom: "2rem" }}>📞 {org?.phone || "—"}</div>
+            <div style={{ color: "#94a3b8", marginBottom: "0.5rem" }}>📧 {org?.email || "-"}</div>
+            <div style={{ color: "#94a3b8", marginBottom: "2rem" }}>📞 {org?.phone || "-"}</div>
             <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#c9a84c", marginBottom: "1rem" }}>Membros ({members.length})</div>
             {members.map(m => (
               <div key={m.id} style={s.memberCard}>

@@ -1,6 +1,9 @@
-﻿import axios from "axios";
+import axios from "axios";
 const api = axios.create({
-    baseURL: "https://assistia-kmbl.onrender.com/api",
+    baseURL: "https://swinging-proofing-vocation.ngrok-free.dev/api",
+    headers: {
+        "ngrok-skip-browser-warning": "true"
+    }
 });
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");

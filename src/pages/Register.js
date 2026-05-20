@@ -11,20 +11,24 @@ function Register() {
         e.preventDefault();
         try {
             const response = await api.post('/register', {
-                name: form.name,
-                email: form.email,
-                password: form.password,
-                password_confirmation: form.password_confirmation,
-            });
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-            navigate('/dashboard');
+    name: form.name,
+    email: form.email,
+    password: form.password,
+    password_confirmation: form.password_confirmation,
+});
+const { token, user } = response.data;
+if (token) {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    navigate('/dashboard');
+} else {
+    setError('Erro ao obter token. Tenta novamente.');
+}
         } catch (err) {
             if (err.response) {
                 const errors = err.response.data.errors;
                 if (errors) {
-                    const firstError = Object.values(errors)[0][0];
-                    setError(firstError);
+                    setError(Object.values(errors)[0][0]);
                 } else {
                     setError(err.response.data.message || 'Erro ao registar!');
                 }
